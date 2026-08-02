@@ -90,7 +90,7 @@ if ($loggedIn) {
     <?php if ($loggedIn): ?>
         <section class="jobs-page">
             <div class="jobs-page-head">
-                <h1>Job Listings</h1>
+                <h1>Find You Dream Job</h1>
                 <p class="protected-lead">Browse open positions from trusted employers across Sri Lanka.</p>
             </div>
 
@@ -152,7 +152,7 @@ if ($loggedIn) {
 
             <?php if (empty($jobs)): ?>
                 <div class="empty-state" style="margin-top:30px;">
-                    <p>No job listings match your search — try clearing filters or check back soon.</p>
+                    <p>No job listings match your search  try clearing filters or check back soon.</p>
                 </div>
             <?php else: ?>
                 <div class="jobs-grid">
