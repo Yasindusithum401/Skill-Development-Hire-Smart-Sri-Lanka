@@ -54,7 +54,7 @@ if ($loggedIn) {
         <span class="material-symbols-outlined">arrow_cool_down</span>
         <div class="buttonbottum">
             <?php if ($loggedIn): ?>
-                <a href="jobs.php" class="loginbtn2">Go to Jobs</a>
+                <a href="jobs.php" class="loginbtn2" style="text-decoration: none;">Go to Jobs</a>
             <?php else: ?>
                 <button class="loginbtn2 open-login-modal">Login</button>
             <?php endif; ?>
