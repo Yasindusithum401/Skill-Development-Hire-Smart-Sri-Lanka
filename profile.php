@@ -53,9 +53,16 @@ $statusType = $_GET['status'] ?? '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - Hire Smart Sri Lanka</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="home.css">
+    <link rel ="stylesheet" href="profile.css">
 </head>
 <body>
+    <div class="shape shape1"></div>
+    <div class="shape shape2"></div>
+    <div class="shape shape3"></div>
+    <div class="shape shape4"></div>
+    <div class="shape shape5"></div>
+    <div class="shape shape6"></div>
+
     <?php include 'navbar.php'; ?>
 
     <section class="profile-page">
@@ -121,7 +128,7 @@ $statusType = $_GET['status'] ?? '';
                         <label class="form-label">About Me</label>
                         <textarea name="bio" class="form-control" rows="3" placeholder="A short summary about your experience and goals..."><?php echo htmlspecialchars($profile['bio'] ?? ''); ?></textarea>
                     </div>
-                    <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;">Save Changes</button>
+                    <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;background:#ff7a00;color:white;">Save Changes</button>
                 </form>
             </div>
 
@@ -138,7 +145,7 @@ $statusType = $_GET['status'] ?? '';
                 <form action="process.php" method="POST" enctype="multipart/form-data" class="profile-form-inline">
                     <input type="hidden" name="action" value="upload_cv">
                     <input type="file" name="cv" accept="application/pdf" class="form-control" required style="max-width:340px;">
-                    <button type="submit" class="btn fw-bold auth-btn-primary">Upload PDF CV</button>
+                    <button type="submit" class="btn fw-bold auth-btn-primary" style="background:#ff7a00;color:white;">Upload PDF CV</button>
                 </form>
                 <small class="text-muted">PDF only, max 5MB. Uploading a new file replaces your current CV.</small>
             </div>
@@ -197,7 +204,7 @@ $statusType = $_GET['status'] ?? '';
                         <label class="form-label">Company Description</label>
                         <textarea name="company_description" class="form-control" rows="3" required><?php echo htmlspecialchars($profile['company_description']); ?></textarea>
                     </div>
-                    <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;">Save Changes</button>
+                    <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;background:#ff7a00;color:white;">Save Changes</button>
                 </form>
             </div>
 
@@ -261,7 +268,7 @@ $statusType = $_GET['status'] ?? '';
                         <label class="form-label">Requirements (optional)</label>
                         <textarea name="requirements" class="form-control" rows="2"></textarea>
                     </div>
-                    <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;">Publish Job</button>
+                    <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;background:#ff7a00;color:white;">Publish Job</button>
                 </form>
             </div>
 
