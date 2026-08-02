@@ -751,24 +751,6 @@ section h5{
     font-size:14px;
     padding:10px 14px;
 }
-/*Flash banners (success/error, reused on jobs/profile pages)*/
-.job-flash{
-    max-width:1100px;
-    margin:0 auto 24px;
-    padding:14px 20px;
-    border-radius:12px;
-    font-size:14.5px;
-    font-weight:500;
-}
-.job-flash-success{
-    background:#e9f8ee;
-    color:#1e7a3d;
-    border:1px solid #bfe9cc;
-}
-.job-flash-error{background:#fdeceb;
-    color:#c23a2e;
-    border:1px solid #f6c9c4;
-}
 /*Jobs page: search bar + filters*/
 .jobs-page{
     max-width:1200px;
@@ -856,7 +838,8 @@ section h5{
 /*Jobs page: card grid*/
 .jobs-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    grid-row: auto;
+    grid-template-columns:repeat(3,1fr);
     gap:22px;
 }
 .job-card{
@@ -923,6 +906,11 @@ section h5{
     background:#f5f0ea;
     color:#6d6152;
 }
+.job-apply-btn:hover{background:#ec7000;color:#fff;}
+.job-apply-btn.job-applied{background:#e9f8ee;color:#1e7a3d;cursor:default;}
+.job-apply-btn.job-manage-btn{background:#3c4a5e;}
+.job-apply-btn.job-manage-btn:hover{background:#29323f;}
+.job-apply-btn:disabled{opacity:.85;cursor:default;}
 .job-tag-type{background:#fff1e0;color:#ff7a00;}
 .job-card-location{font-size:13.5px;color:#6d6152;margin:0 0 6px;}
 .job-card-salary{font-size:14px;font-weight:600;color:#1e7a3d;margin:0 0 10px;}
@@ -933,57 +921,4 @@ section h5{
     border:none;border-radius:10px;padding:9px 18px;font-size:13.5px;font-weight:700;
     background:#ff8c1a;color:#fff;cursor:pointer;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;
 }
-.job-apply-btn:hover{background:#ec7000;color:#fff;}
-.job-apply-btn.job-applied{background:#e9f8ee;color:#1e7a3d;cursor:default;}
-.job-apply-btn.job-manage-btn{background:#3c4a5e;}
-.job-apply-btn.job-manage-btn:hover{background:#29323f;}
-.job-apply-btn:disabled{opacity:.85;cursor:default;}
 
-/*Profile page*/
-.profile-page{max-width:900px;margin:0 auto;padding:50px 20px 80px;}
-.profile-card{
-    display:flex;align-items:center;gap:22px;
-    background:#fff;border-radius:20px;padding:28px;
-    border:1px solid #f1e6d8;box-shadow:0 10px 28px rgba(20,14,8,.07);
-    margin-bottom:26px;
-}
-.profile-avatar-wrap{position:relative;width:96px;height:96px;flex:none;}
-.profile-avatar-img{width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;box-shadow:0 4px 14px rgba(0,0,0,.15);}
-.profile-avatar-initial{
-    width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:#ff8c1a;color:#fff;font-size:36px;font-weight:700;
-}
-.profile-avatar-edit{
-    position:absolute;bottom:0;right:0;width:30px;height:30px;border-radius:50%;
-    background:#3c4a5e;color:#fff;display:flex;align-items:center;justify-content:center;
-    font-size:13px;cursor:pointer;border:2px solid #fff;
-}
-.profile-card-info h1{font-size:26px;font-weight:700;margin:0 0 6px;color:#191410;}
-.profile-role-badge{
-    display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;
-    background:#fff1e0;color:#ff7a00;margin-bottom:6px;
-}
-.profile-role-recruiter{background:#eef0f3;color:#3c4a5e;}
-.profile-card-sub{font-size:14px;color:#8a7c6d;margin:0;}
-
-.profile-section{
-    background:#fff;border-radius:18px;padding:26px 28px;
-    border:1px solid #f1e6d8;box-shadow:0 8px 22px rgba(20,14,8,.05);
-    margin-bottom:22px;
-}
-.profile-section h2{font-size:19px;font-weight:700;color:#191410;margin-bottom:18px;}
-.profile-form-inline{display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
-.profile-cv-current{font-size:14.5px;color:#57503f;margin-bottom:14px;}
-.profile-table{font-size:13.5px;}
-.profile-table th{color:#8a7c6d;font-weight:600;font-size:12.5px;text-transform:uppercase;}
-
-.my-job-row{border:1px solid #f1e6d8;border-radius:14px;padding:16px 18px;margin-bottom:14px;}
-.my-job-row-main{margin-bottom:10px;font-size:14.5px;}
-.my-job-row-actions{display:flex;gap:10px;flex-wrap:wrap;}
-.my-job-applicants{margin-top:16px;border-top:1px solid #f1e6d8;padding-top:14px;}
-
-@media (max-width:576px){
-    .profile-card{flex-direction:column;text-align:center;}
-    .job-search-row{flex-direction:column;}
-    .job-search-actions{flex-direction:row;}
-}
