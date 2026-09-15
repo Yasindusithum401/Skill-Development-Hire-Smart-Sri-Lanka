@@ -3,11 +3,12 @@ require 'auth_check.php';
 require 'config.php';
 
 $loggedIn = isset($_SESSION['user_id']);
+$userRole = $_SESSION['role'] ?? null;
 $userName = $_SESSION['name'] ?? '';
 $profileImage = null;
 
 if ($loggedIn) {
-    if ($_SESSION['role'] === 'seeker') {
+    if ($userRole === 'seeker') {
         $stmt = $pdo->prepare("SELECT profile_image FROM job_seekers WHERE id = ?");
     } else {
         $stmt = $pdo->prepare("SELECT profile_image FROM recruiters WHERE id = ?");
@@ -15,6 +16,7 @@ if ($loggedIn) {
     $stmt->execute([$_SESSION['user_id']]);
     $row = $stmt->fetch();
     $profileImage = $row['profile_image'] ?? null;
+    $_SESSION['profile_image'] = $profileImage;
 }
 ?>
 <!DOCTYPE html>
@@ -54,6 +56,9 @@ if ($loggedIn) {
         <span class="material-symbols-outlined">arrow_cool_down</span>
         <div class="buttonbottum">
             <?php if ($loggedIn): ?>
+                <?php if ($userRole === 'recruiter'): ?>
+                    <a href="dashboard.php" class="loginbtn2" style="text-decoration: none; margin-right: 10px;">Go to Dashboard</a>
+                <?php endif; ?>
                 <a href="jobs.php" class="loginbtn2" style="text-decoration: none;">Go to Jobs</a>
             <?php else: ?>
                 <button class="loginbtn2 open-login-modal">Login</button>

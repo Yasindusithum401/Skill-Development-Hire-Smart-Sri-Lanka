@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require 'config.php';
+require 'trust_calculator.php'; // Included for ETSR metric updates
 
 $action = $_POST['action'] ?? '';
 
@@ -143,8 +144,6 @@ if ($action === 'register_seeker') {
 
     respond_login($ajax, 'error', 'Incorrect email or password.');
 
-// PROFILE UPDATES (seeker)
-
 } elseif ($action === 'update_profile_seeker') {
     require_logged_in_json_safe();
     if ($_SESSION['role'] !== 'seeker') { redirect_with_message('index.php', 'error', 'Not authorized.'); }
@@ -167,7 +166,6 @@ if ($action === 'register_seeker') {
 
     redirect_with_message('profile.php', 'success', 'Profile updated successfully.');
 
-// PROFILE UPDATES (recruiter)
 } elseif ($action === 'update_profile_recruiter') {
     require_logged_in_json_safe();
     if ($_SESSION['role'] !== 'recruiter') { redirect_with_message('index.php', 'error', 'Not authorized.'); }
@@ -185,8 +183,6 @@ if ($action === 'register_seeker') {
     $_SESSION['name'] = $company_name;
 
     redirect_with_message('profile.php', 'success', 'Company profile updated successfully.');
-
-// AVATAR / LOGO UPLOAD (both roles)
 
 } elseif ($action === 'upload_avatar') {
     require_logged_in_json_safe();
@@ -207,8 +203,6 @@ if ($action === 'register_seeker') {
 
     redirect_with_message('profile.php', 'success', 'Profile photo updated.');
 
-// CV UPLOAD (seeker only)
-
 } elseif ($action === 'upload_cv') {
     require_logged_in_json_safe();
     if ($_SESSION['role'] !== 'seeker') { redirect_with_message('index.php', 'error', 'Not authorized.'); }
@@ -228,20 +222,18 @@ if ($action === 'register_seeker') {
 
     redirect_with_message('profile.php', 'success', 'CV uploaded successfully.');
 
-// POST A JOB (recruiter only)
-
 } elseif ($action === 'post_job') {
     require_logged_in_json_safe();
     if ($_SESSION['role'] !== 'recruiter') { redirect_with_message('index.php', 'error', 'Not authorized.'); }
 
-    $title       = trim($_POST['title'] ?? '');
-    $category    = trim($_POST['category'] ?? '');
-    $jobType     = trim($_POST['job_type'] ?? '');
-    $experience  = trim($_POST['experience_level'] ?? '');
-    $location    = trim($_POST['location'] ?? '');
-    $salaryMin   = $_POST['salary_min'] ?? '';
-    $salaryMax   = $_POST['salary_max'] ?? '';
-    $description = trim($_POST['description'] ?? '');
+    $title        = trim($_POST['title'] ?? '');
+    $category     = trim($_POST['category'] ?? '');
+    $jobType      = trim($_POST['job_type'] ?? '');
+    $experience   = trim($_POST['experience_level'] ?? '');
+    $location     = trim($_POST['location'] ?? '');
+    $salaryMin    = $_POST['salary_min'] ?? '';
+    $salaryMax    = $_POST['salary_max'] ?? '';
+    $description  = trim($_POST['description'] ?? '');
     $requirements = trim($_POST['requirements'] ?? '');
 
     if ($title === '' || $category === '' || $jobType === '' || $experience === '' || $location === '' || $description === '') {
@@ -262,8 +254,6 @@ if ($action === 'register_seeker') {
 
     redirect_with_message('profile.php', 'success', 'Job posted successfully.');
 
-// TOGGLE JOB STATUS (open/closed)  recruiter's own jobs only
-
 } elseif ($action === 'toggle_job_status') {
     require_logged_in_json_safe();
     if ($_SESSION['role'] !== 'recruiter') { redirect_with_message('index.php', 'error', 'Not authorized.'); }
@@ -282,8 +272,6 @@ if ($action === 'register_seeker') {
     $update->execute([$newStatus, $jobId]);
 
     redirect_with_message('profile.php', 'success', 'Job marked as ' . $newStatus . '.');
-
-// APPLY TO A JOB (seeker only)
 
 } elseif ($action === 'apply_job') {
     require_logged_in_json_safe();
@@ -308,10 +296,81 @@ if ($action === 'register_seeker') {
     try {
         $insert = $pdo->prepare("INSERT INTO applications (job_id, seeker_id) VALUES (?, ?)");
         $insert->execute([$jobId, $_SESSION['user_id']]);
+        $appId = $pdo->lastInsertId();
+
+        // Create initial history trail entry
+        $hist = $pdo->prepare("INSERT INTO application_status_history (application_id, status) VALUES (?, 'Applied')");
+        $hist->execute([$appId]);
+
         redirect_with_message('jobs.php', 'success', 'Application submitted!');
     } catch (PDOException $e) {
         redirect_with_message('jobs.php', 'error', 'You have already applied to this job.');
     }
+
+// UPDATE APPLICATION MILESTONE STATUS (Recruiter Action)
+} elseif ($action === 'update_application_status') {
+    require_logged_in_json_safe();
+    if ($_SESSION['role'] !== 'recruiter') { redirect_with_message('dashboard.php', 'error', 'Not authorized.'); }
+
+    $applicationId   = (int)($_POST['application_id'] ?? 0);
+    $newStatus       = trim($_POST['status'] ?? '');
+    $rejectionReason = $_POST['rejection_reason'] ?? null;
+    $rejectionComment = $_POST['rejection_comment'] ?? null;
+
+    $allowed = ['Applied', 'In Review', 'HR Screening', 'Interview', 'Selected', 'Rejected'];
+    if (!$applicationId || !in_array($newStatus, $allowed, true)) {
+        redirect_with_message('dashboard.php', 'error', 'Invalid status update selection.');
+    }
+
+    // Verify recruiter owns the job posting
+    $stmtCheck = $pdo->prepare(
+        "SELECT a.id, j.recruiter_id 
+         FROM applications a 
+         JOIN jobs j ON j.id = a.job_id 
+         WHERE a.id = ? AND j.recruiter_id = ?"
+    );
+    $stmtCheck->execute([$applicationId, $_SESSION['user_id']]);
+    if (!$stmtCheck->fetch()) {
+        redirect_with_message('dashboard.php', 'error', 'Unauthorized operation.');
+    }
+
+    // Update state
+    $stmtUp = $pdo->prepare("UPDATE applications SET current_status = ? WHERE id = ?");
+    $stmtUp->execute([$newStatus, $applicationId]);
+
+    // Record transition audit history
+    $stmtHist = $pdo->prepare(
+        "INSERT INTO application_status_history (application_id, status, rejection_reason, rejection_comment) 
+         VALUES (?, ?, ?, ?)"
+    );
+    $stmtHist->execute([$applicationId, $newStatus, $rejectionReason, $rejectionComment]);
+
+    // Recalculate and update the employer's cached ETSR trust score
+    recalculateEmployerTrustScore($pdo, (int)$_SESSION['user_id']);
+
+    redirect_with_message('dashboard.php', 'success', 'Application status updated.');
+
+// SUBMIT EMPLOYER STAR RATING & REVIEW (Candidate Action)
+} elseif ($action === 'submit_employer_review') {
+    require_logged_in_json_safe();
+    if ($_SESSION['role'] !== 'seeker') { redirect_with_message('my_applications.php', 'error', 'Not authorized.'); }
+
+    $recruiterId = (int)($_POST['recruiter_id'] ?? 0);
+    $rating      = (int)($_POST['rating'] ?? 0);
+    $comment     = trim($_POST['comment'] ?? '');
+
+    if ($rating < 1 || $rating > 5 || $recruiterId === 0) {
+        redirect_with_message('my_applications.php', 'error', 'Please provide a valid rating (1-5 stars).');
+    }
+
+    $stmtRev = $pdo->prepare(
+        "INSERT INTO employer_reviews (recruiter_id, seeker_id, rating, comment) 
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment)"
+    );
+    $stmtRev->execute([$recruiterId, $_SESSION['user_id'], $rating, $comment]);
+
+    redirect_with_message('my_applications.php', 'success', 'Review submitted successfully.');
 
 } else {
     redirect_with_message('index.php', 'error', 'Invalid request.');
