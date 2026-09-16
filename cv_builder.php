@@ -40,32 +40,39 @@ if ($loggedIn) {
                 <a href="cv/cv1.php" class="card">
                     <img src="cv/cv1.png" alt="cv1png eka">
                     <div class="overlay">
-                        <h2>IT CV Template</h2>
+                        <h2>IT  Template</h2>
                         <p>You can download this pdf.</p>
                     </div>
                 </a>
 
-                <a href="upload.html" class="card">
-                    <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900" alt="">
+                <a href="cv/cv temp3.php" class="card">
+                    <img src="cv/cv2.png" alt="">
                     <div class="overlay">
-                        <h2>..........</h2>
-                        <p>....................</p>
+                        <h2>Agriculture  Template</h2>
+                        <p>You can download this pdf.</p>
                     </div>
                 </a>
 
-                <a href="community.html" class="card">
-                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900" alt="">
+                <a href="cv/cvtemp2.php" class="card">
+                    <img src="cv/cv3.png" alt="">
                     <div class="overlay">
-                        <h2>.................</h2>
-                        <p>.......................</p>
+                        <h2>Medicine Template</h2>
+                        <p>You can download this pdf.</p>
                     </div>
                 </a>
 
-                <a href="about.html" class="card">
-                    <img src="https://images.unsplash.com/photo-1513258496099-48168024aec0?w=900" alt="">
+                <a href="cv/mgcvtemp4.php" class="card">
+                    <img src="cv/cv4.png" alt="">
                     <div class="overlay">
-                        <h2>............</h2>
-                        <p>...............</p>
+                        <h2>Management  Template</h2>
+                        <p>You can download this pdf.</p>
+                    </div>
+                </a>
+                <a href="" class="card">
+                    <img src="image..." alt="">
+                    <div class="overlay">
+                        <h2>comming soon more... </h2>
+                        <p>we are add more wait..</p>
                     </div>
                 </a>
 
