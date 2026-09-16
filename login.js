@@ -36,6 +36,64 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', () => showTab('role-view'));
     });
 
+    // ---- Auto-calculate age from Date of Birth (Job Seeker signup) ----
+    const dobInput = document.getElementById('dob');
+    const ageInput = document.getElementById('calculated_age');
+    if (dobInput && ageInput) {
+        const updateCalculatedAge = function () {
+            if (!dobInput.value) {
+                ageInput.value = '';
+                return;
+            }
+            const dob = new Date(dobInput.value);
+            if (isNaN(dob.getTime())) {
+                ageInput.value = '';
+                return;
+            }
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const hasNotHadBirthdayThisYear =
+                today.getMonth() < dob.getMonth() ||
+                (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
+            if (hasNotHadBirthdayThisYear) {
+                age--;
+            }
+            ageInput.value = age >= 0 ? age : '';
+        };
+        dobInput.addEventListener('change', updateCalculatedAge);
+        dobInput.addEventListener('input', updateCalculatedAge);
+    }
+
+    // ---- Password / Confirm Password matching (Seeker & Recruiter signup) ----
+    function wirePasswordConfirmation(formId, passwordId, confirmId) {
+        const form = document.getElementById(formId);
+        const password = document.getElementById(passwordId);
+        const confirm = document.getElementById(confirmId);
+        if (!form || !password || !confirm) return;
+
+        const validateMatch = function () {
+            if (password.value !== confirm.value) {
+                confirm.setCustomValidity('Passwords do not match.');
+            } else {
+                confirm.setCustomValidity('');
+            }
+        };
+
+        password.addEventListener('input', validateMatch);
+        confirm.addEventListener('input', validateMatch);
+
+        form.addEventListener('submit', function (e) {
+            validateMatch();
+            if (!confirm.checkValidity()) {
+                e.preventDefault();
+                confirm.reportValidity();
+            }
+        });
+    }
+
+    wirePasswordConfirmation('seekerForm', 'seeker_pass', 'seeker_cpass');
+    wirePasswordConfirmation('recruiterForm', 'recruiter_pass', 'recruiter_cpass');
+
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', function (e) {
