@@ -1,5 +1,5 @@
 <?php
-require 'auth_check.php';
+require_once 'auth_check.php';
 require_login();
 
 if ($_SESSION['role'] !== 'recruiter') {
@@ -7,8 +7,8 @@ if ($_SESSION['role'] !== 'recruiter') {
     exit;
 }
 
-require 'config.php';
-require 'trust_calculator.php';
+require_once 'config.php';
+require_once 'trust_calculator.php';
 
 $recruiterId = (int)$_SESSION['user_id'];
 
@@ -165,7 +165,7 @@ $stages = ['Applied', 'In Review', 'HR Screening', 'Interview', 'Selected', 'Rej
                     <input type="hidden" name="status" value="Rejected">
                     <input type="hidden" name="application_id" id="modal_app_id">
                     <div class="modal-header">
-                        <h5 class="modal-title">Reject Applicant</h5>
+                        <h5 class="modal-title">Reject <span id="modal_candidate_name"></span></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -195,6 +195,7 @@ $stages = ['Applied', 'In Review', 'HR Screening', 'Interview', 'Selected', 'Rej
         const rejModal = new bootstrap.Modal(document.getElementById('rejectionModal'));
         function openRejectionModal(id, name) {
             document.getElementById('modal_app_id').value = id;
+            document.getElementById('modal_candidate_name').textContent = name;
             rejModal.show();
         }
     </script>
