@@ -1,5 +1,5 @@
 <?php
-require 'auth_check.php';
+require_once 'auth_check.php';
 require_login();
 
 if ($_SESSION['role'] !== 'seeker') {
@@ -7,20 +7,30 @@ if ($_SESSION['role'] !== 'seeker') {
     exit;
 }
 
-require 'config.php';
+require_once 'config.php';
 
 $seekerId = (int)$_SESSION['user_id'];
 
-// Fetch seeker's applications with history
 $stmt = $pdo->prepare(
     "SELECT a.id AS application_id, a.current_status, a.applied_at, a.updated_at,
             j.title AS job_title, j.id AS job_id,
             r.id AS recruiter_id, r.company_name,
-            rev.rating AS my_rating, rev.comment AS my_review
+            rev.rating AS my_rating, rev.comment AS my_review,
+            rej.rejection_reason, rej.rejection_comment
      FROM applications a
      JOIN jobs j ON j.id = a.job_id
      JOIN recruiters r ON r.id = j.recruiter_id
      LEFT JOIN employer_reviews rev ON rev.recruiter_id = r.id AND rev.seeker_id = ?
+     LEFT JOIN (
+         SELECT h1.application_id, h1.rejection_reason, h1.rejection_comment
+         FROM application_status_history h1
+         WHERE h1.status = 'Rejected'
+           AND h1.changed_at = (
+               SELECT MAX(h2.changed_at)
+               FROM application_status_history h2
+               WHERE h2.application_id = h1.application_id AND h2.status = 'Rejected'
+           )
+     ) rej ON rej.application_id = a.id
      WHERE a.seeker_id = ?
      ORDER BY a.updated_at DESC"
 );
@@ -49,6 +59,7 @@ $myApps = $stmt->fetchAll();
                         <th>Company</th>
                         <th>Status</th>
                         <th>Applied Date</th>
+                        <th>Rejection Feedback</th>
                         <th>Employer Review</th>
                     </tr>
                 </thead>
@@ -59,6 +70,18 @@ $myApps = $stmt->fetchAll();
                             <td><?php echo htmlspecialchars($app['company_name']); ?></td>
                             <td><span class="badge bg-primary"><?php echo htmlspecialchars($app['current_status']); ?></span></td>
                             <td><?php echo date('M d, Y', strtotime($app['applied_at'])); ?></td>
+                            <td>
+                                <?php if ($app['current_status'] === 'Rejected' && ($app['rejection_reason'] || $app['rejection_comment'])): ?>
+                                    <?php if ($app['rejection_reason']): ?>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle mb-1 d-inline-block"><?php echo htmlspecialchars($app['rejection_reason']); ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($app['rejection_comment']): ?>
+                                        <div class="small text-muted"><?php echo nl2br(htmlspecialchars($app['rejection_comment'])); ?></div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-muted">—</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php if ($app['my_rating']): ?>
                                     <span class="text-warning fw-bold">★ <?php echo $app['my_rating']; ?>/5</span>
