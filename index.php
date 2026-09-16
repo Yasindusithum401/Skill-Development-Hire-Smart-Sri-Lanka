@@ -1,23 +1,10 @@
 <?php
-require 'auth_check.php';
-require 'config.php';
+require_once 'auth_check.php';
+require_once 'config.php';
 
 $loggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['role'] ?? null;
 $userName = $_SESSION['name'] ?? '';
-$profileImage = null;
-
-if ($loggedIn) {
-    if ($userRole === 'seeker') {
-        $stmt = $pdo->prepare("SELECT profile_image FROM job_seekers WHERE id = ?");
-    } else {
-        $stmt = $pdo->prepare("SELECT profile_image FROM recruiters WHERE id = ?");
-    }
-    $stmt->execute([$_SESSION['user_id']]);
-    $row = $stmt->fetch();
-    $profileImage = $row['profile_image'] ?? null;
-    $_SESSION['profile_image'] = $profileImage;
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
