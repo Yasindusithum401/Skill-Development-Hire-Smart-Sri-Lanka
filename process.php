@@ -2,8 +2,8 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require 'config.php';
-require 'trust_calculator.php'; // Included for ETSR metric updates
+require_once 'config.php';
+require_once 'trust_calculator.php'; // Included for ETSR metric updates
 
 $action = $_POST['action'] ?? '';
 
