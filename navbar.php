@@ -2,11 +2,22 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once 'config.php';
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['role'] ?? null;
 $userName = $_SESSION['name'] ?? '';
-$profileImg = $_SESSION['profile_image'] ?? null;
+$profileImg = null;
+
+// Always read the current profile image straight from the database so the
+// navbar avatar never goes stale after an upload on a page other than index.php.
+if ($isLoggedIn) {
+    $table = $userRole === 'seeker' ? 'job_seekers' : 'recruiters';
+    $stmt = $pdo->prepare("SELECT profile_image FROM $table WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $row = $stmt->fetch();
+    $profileImg = $row['profile_image'] ?? null;
+}
 ?>
 <nav class="navbar">
     <div class="logo">
@@ -17,9 +28,9 @@ $profileImg = $_SESSION['profile_image'] ?? null;
         <li><a href="index.php">Home</a></li>
         <li><a href="jobs.php" <?php echo !$isLoggedIn ? 'class="open-login-modal" data-nav-guard="1"' : ''; ?>>Jobs</a></li>
         <?php if ($isLoggedIn && $userRole === 'recruiter'): ?>
-            <li><a href="dashboard.php" class="fw-bold text-primary">Dashboard</a></li>
+            <li><a href="dashboard.php" >Dashboard</a></li>
         <?php elseif ($isLoggedIn && $userRole === 'seeker'): ?>
-            <li><a href="my_applications.php" class="fw-bold text-primary">My Applications</a></li>
+            <li><a href="my_applications.php">My Applications</a></li>
         <?php endif; ?>
         <li><a href="cv_builder.php" <?php echo !$isLoggedIn ? 'class="open-login-modal" data-nav-guard="1"' : ''; ?>>CV Builder</a></li>
         <li><a href="about.php" <?php echo !$isLoggedIn ? 'class="open-login-modal" data-nav-guard="1"' : ''; ?>>About</a></li>
