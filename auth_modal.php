@@ -149,8 +149,8 @@
                                         <input type="date" id="dob" name="dob" class="form-control" required>
                                     </div>
                                     <div class="col-md-6 mb-3 auth-field">
-                                        <label class="form-label">Calculated Age</label>
-                                        <input type="text" id="calculated_age" class="form-control" readonly placeholder="Auto calculated">
+                                        <label class="form-label">Enter your Age</label>
+                                        <input type="text" id="calculated_age" class="form-control" readonly placeholder=" e.g - 18">
                                     </div>
                                 </div>
 
