@@ -6,7 +6,6 @@ require 'config.php';
 
 $action = $_POST['action'] ?? '';
 
-/** Redirects back to a given page with a status + message the page reads from the URL. */
 function redirect_with_message(string $target, string $status, string $message): void
 {
     $query = http_build_query(['status' => $status, 'message' => $message]);
@@ -14,7 +13,6 @@ function redirect_with_message(string $target, string $status, string $message):
     exit;
 }
 
-/** For the login form: replies with JSON when submitted via fetch(), otherwise redirects. */
 function respond_login(bool $ajax, string $status, string $message, array $extra = []): void
 {
     if ($ajax) {
