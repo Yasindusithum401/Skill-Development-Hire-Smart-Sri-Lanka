@@ -1,7 +1,7 @@
 <?php
-require 'auth_check.php';
+require_once 'auth_check.php';
 require_login();
-require 'config.php';
+require_once 'config.php';
 
 $role = $_SESSION['role'];
 $userId = (int)$_SESSION['user_id'];
