@@ -1,6 +1,6 @@
 <?php
-require 'auth_check.php';
-require 'config.php';
+require_once 'auth_check.php';
+require_once 'config.php';
 
 $jobId = (int)($_GET['id'] ?? 0);
 
@@ -83,6 +83,8 @@ if (!$job) {
             </div>
         </div>
     </div>
+
+    <?php include 'auth_modal.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="login.js"></script>
