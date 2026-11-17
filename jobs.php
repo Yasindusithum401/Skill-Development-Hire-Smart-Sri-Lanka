@@ -92,6 +92,18 @@ if ($loggedIn) {
         .trust-low{background:#fde8e8;color:#a12020}
         .trust-none{background:#eef0f3;color:#5b6470}
         .job-view-link{text-decoration:none}
+        .job-card-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+        .jv-poster{width:100%;max-height:420px;object-fit:contain;background:#f6f1ea;border-radius:12px;margin-bottom:16px}
+        .jv-text{white-space:pre-line}
+        .jv-poster{cursor:zoom-in}
+        .jv-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;display:none;overflow:auto}
+        .jv-lightbox.open{display:flex}
+        .jv-lightbox img{margin:auto;max-width:96vw;max-height:94vh;object-fit:contain;cursor:zoom-in}
+        .jv-lightbox img.actual{max-width:none;max-height:none;cursor:zoom-out}
+        .jv-lb-btn{position:fixed;top:14px;z-index:2001;border:none;border-radius:10px;padding:8px 16px;font-size:14px;font-weight:700;background:#fff;color:#222;text-decoration:none;cursor:pointer}
+        .jv-lb-close{right:16px}
+        .jv-lb-open{left:16px}
+        .jv-lb-hint{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#ddd;font-size:13px;pointer-events:none;z-index:2001}
     </style>
 </head>
 <body>
@@ -208,6 +220,8 @@ if ($loggedIn) {
                             <div class="job-card-footer">
                                 <span class="job-card-posted"><?php echo date('M j, Y', strtotime($job['posted_at'])); ?></span>
 
+                                <div class="job-card-actions">
+                                <button type="button" class="job-apply-btn job-manage-btn" onclick="openJobView(<?php echo (int)$job['id']; ?>)">View</button>
                                 <?php if ($role === 'seeker'): ?>
                                     <?php if (in_array($job['id'], $appliedJobIds, true)): ?>
                                         <button class="job-apply-btn job-applied" disabled>Applied ✓</button>
@@ -217,6 +231,7 @@ if ($loggedIn) {
                                 <?php elseif ($role === 'recruiter' && (int)$job['recruiter_id'] === (int)$_SESSION['user_id']): ?>
                                     <a href="profile.php" class="job-apply-btn job-manage-btn">Manage on Profile</a>
                                 <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -228,6 +243,136 @@ if ($loggedIn) {
             <h1>Job Listings</h1>
             <p class="protected-lead">Please log in to view this page.</p>
         </section>
+    <?php endif; ?>
+
+    <?php if ($loggedIn && !empty($jobs)): ?>
+        <?php
+        $jobData = [];
+        foreach ($jobs as $j) {
+            $jobData[(int)$j['id']] = [
+                'id'          => (int)$j['id'],
+                'title'       => $j['title'],
+                'company'     => $j['company_name'],
+                'location'    => $j['location'],
+                'category'    => $j['category'],
+                'job_type'    => $j['job_type'],
+                'experience'  => $j['experience_level'],
+                'salary'      => ($j['salary_min'] || $j['salary_max'])
+                                    ? 'LKR ' . number_format((float)$j['salary_min']) . ' – ' . number_format((float)$j['salary_max'])
+                                    : '',
+                'description' => $j['description'],
+                'requirements'=> $j['requirements'] ?? '',
+                'poster'      => $j['poster_image'] ?? '',
+                'contact'     => $j['contact_details'] ?? '',
+                'posted'      => date('M j, Y', strtotime($j['posted_at'])),
+                'trust'       => trust_chip($j['overall_trust_score'], $j['display_badge']),
+            ];
+        }
+        ?>
+        <!-- Job view popup -->
+        <div class="modal fade" id="jobViewModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title fw-bold" id="jv-title"></h5>
+                            <div class="text-muted small" id="jv-company"></div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <img id="jv-poster" class="jv-poster" alt="Job poster" style="display:none;" onclick="openPosterFull()" title="Click to view full size">
+                        <div id="jv-poster-actions" class="mb-3" style="display:none;margin-top:-6px;">
+                            <button type="button" class="job-apply-btn job-manage-btn" onclick="openPosterFull()">🔍 View Full Size</button>
+                        </div>
+                        <div class="job-card-tags mb-2" id="jv-tags"></div>
+                        <p class="mb-1" id="jv-location"></p>
+                        <p class="mb-1 fw-bold" id="jv-salary"></p>
+                        <div id="jv-trust"></div>
+                        <h6 class="fw-bold mt-3">Job Description</h6>
+                        <p class="jv-text" id="jv-description"></p>
+                        <div id="jv-req-wrap">
+                            <h6 class="fw-bold mt-3">Requirements</h6>
+                            <p class="jv-text" id="jv-requirements"></p>
+                        </div>
+                        <div id="jv-contact-wrap">
+                            <h6 class="fw-bold mt-3">Company Contact Details</h6>
+                            <p class="jv-text" id="jv-contact"></p>
+                        </div>
+                        <p class="text-muted small mb-0" id="jv-posted"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="#" id="jv-details-link" class="job-apply-btn">Full Details &amp; Apply</a>
+                        <button type="button" class="job-apply-btn job-manage-btn" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Full size poster viewer -->
+        <div class="jv-lightbox" id="jv-lightbox">
+            <a href="#" target="_blank" rel="noopener" class="jv-lb-btn jv-lb-open" id="jv-lb-open">Open original ↗</a>
+            <button type="button" class="jv-lb-btn jv-lb-close" id="jv-lb-close">✕ Close</button>
+            <img id="jv-lb-img" alt="Job poster full size">
+            <div class="jv-lb-hint">Click the image to zoom in / out</div>
+        </div>
+        <script>
+            const JOB_DATA = <?php echo json_encode($jobData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
+            var jvLightbox = document.getElementById('jv-lightbox');
+            var jvLbImg = document.getElementById('jv-lb-img');
+            function openPosterFull() {
+                var src = document.getElementById('jv-poster').getAttribute('src');
+                if (!src) return;
+                jvLbImg.src = src;
+                jvLbImg.classList.remove('actual');
+                document.getElementById('jv-lb-open').href = src;
+                jvLightbox.classList.add('open');
+            }
+            function closePosterFull() { jvLightbox.classList.remove('open'); }
+            jvLbImg.addEventListener('click', function () { jvLbImg.classList.toggle('actual'); });
+            document.getElementById('jv-lb-close').addEventListener('click', closePosterFull);
+            jvLightbox.addEventListener('click', function (e) { if (e.target === jvLightbox) closePosterFull(); });
+            // Esc closes only the full size viewer first (not the whole popup)
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && jvLightbox.classList.contains('open')) {
+                    e.stopImmediatePropagation();
+                    closePosterFull();
+                }
+            }, true);
+
+            function openJobView(id) {
+                var j = JOB_DATA[id];
+                if (!j) return;
+                var set = function (el, text) { document.getElementById(el).textContent = text || ''; };
+                set('jv-title', j.title);
+                set('jv-company', j.company);
+                set('jv-location', '📍 ' + j.location);
+                set('jv-salary', j.salary);
+                set('jv-description', j.description);
+                set('jv-requirements', j.requirements);
+                set('jv-contact', j.contact);
+                document.getElementById('jv-contact-wrap').style.display = j.contact ? '' : 'none';
+                set('jv-posted', 'Posted ' + j.posted);
+                document.getElementById('jv-req-wrap').style.display = j.requirements ? '' : 'none';
+                document.getElementById('jv-trust').innerHTML = j.trust; // built on the server by trust_chip()
+
+                var tags = document.getElementById('jv-tags');
+                tags.innerHTML = '';
+                [j.job_type, j.category, j.experience].forEach(function (t, i) {
+                    var s = document.createElement('span');
+                    s.className = 'job-tag' + (i === 0 ? ' job-tag-type' : '');
+                    s.textContent = t;
+                    tags.appendChild(s);
+                });
+
+                var img = document.getElementById('jv-poster');
+                var actions = document.getElementById('jv-poster-actions');
+                if (j.poster) { img.src = j.poster; img.style.display = ''; actions.style.display = ''; }
+                else { img.removeAttribute('src'); img.style.display = 'none'; actions.style.display = 'none'; }
+
+                document.getElementById('jv-details-link').href = 'job_details.php?id=' + j.id;
+                new bootstrap.Modal(document.getElementById('jobViewModal')).show();
+            }
+        </script>
     <?php endif; ?>
 
     <?php include 'auth_modal.php'; ?>
