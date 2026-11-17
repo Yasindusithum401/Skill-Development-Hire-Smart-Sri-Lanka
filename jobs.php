@@ -9,6 +9,18 @@ $role = $_SESSION['role'] ?? null;
 $jobs = [];
 $appliedJobIds = [];
 
+function trust_chip(?string $score, ?string $badge): string {
+    if ($score === null || $badge === null || $badge === 'New Employer') {
+        return '<span class="trust-chip trust-none">🛡 Trust: New employer</span>';
+    }
+    $v = (float)$score;
+    if ($badge === 'Insufficient Data') {
+        return '<span class="trust-chip trust-none">🛡 Trust: ' . round($v) . '% (limited data)</span>';
+    }
+    $cls = $v >= 75 ? 'trust-high' : ($v >= 50 ? 'trust-mid' : 'trust-low');
+    return '<span class="trust-chip ' . $cls . '">🛡 Trust: ' . round($v) . '%</span>';
+}
+
 if ($loggedIn) {
     // ---- Read + sanitize filters ----
     $q          = trim($_GET['q'] ?? '');
@@ -47,9 +59,11 @@ if ($loggedIn) {
         $params[] = (int)$minSalary;
     }
 
-    $sql = "SELECT j.*, r.company_name, r.profile_image AS company_logo
+    $sql = "SELECT j.*, r.company_name, r.profile_image AS company_logo,
+                   ts.overall_trust_score, ts.display_badge
             FROM jobs j
             JOIN recruiters r ON r.id = j.recruiter_id
+            LEFT JOIN employer_trust_scores ts ON ts.recruiter_id = r.id
             WHERE " . implode(' AND ', $where) . "
             ORDER BY j.posted_at DESC";
     $stmt = $pdo->prepare($sql);
@@ -71,9 +85,23 @@ if ($loggedIn) {
     <title>Jobs - Hire Smart Sri Lanka</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="home.css">
+    <style>
+        .trust-chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;margin:6px 0 2px}
+        .trust-high{background:#e6f6ec;color:#146c2e}
+        .trust-mid{background:#fff4d6;color:#8a5a00}
+        .trust-low{background:#fde8e8;color:#a12020}
+        .trust-none{background:#eef0f3;color:#5b6470}
+        .job-view-link{text-decoration:none}
+    </style>
 </head>
 <body>
     <?php include 'navbar.php'; ?>
+    <div class="shape shape1"></div>
+    <div class="shape shape2"></div>
+    <div class="shape shape3"></div>
+    <div class="shape shape4"></div>
+    <div class="shape shape5"></div>
+    <div class="shape shape6"></div>
 
     <?php if ($loggedIn): ?>
         <section class="jobs-page">
@@ -155,7 +183,7 @@ if ($loggedIn) {
                                     <?php endif; ?>
                                 </div>
                                 <div>
-                                    <h3 class="job-card-title"><?php echo htmlspecialchars($job['title']); ?></h3>
+                                    <h3 class="job-card-title"><a class="job-view-link text-reset" href="job_details.php?id=<?php echo (int)$job['id']; ?>"><?php echo htmlspecialchars($job['title']); ?></a></h3>
                                     <p class="job-card-company"><?php echo htmlspecialchars($job['company_name']); ?></p>
                                 </div>
                             </div>
@@ -167,6 +195,7 @@ if ($loggedIn) {
                             </div>
 
                             <p class="job-card-location">📍 <?php echo htmlspecialchars($job['location']); ?></p>
+                            <?php echo trust_chip($job['overall_trust_score'], $job['display_badge']); ?>
 
                             <?php if ($job['salary_min'] || $job['salary_max']): ?>
                                 <p class="job-card-salary">
@@ -183,11 +212,7 @@ if ($loggedIn) {
                                     <?php if (in_array($job['id'], $appliedJobIds, true)): ?>
                                         <button class="job-apply-btn job-applied" disabled>Applied ✓</button>
                                     <?php else: ?>
-                                        <form action="process.php" method="POST">
-                                            <input type="hidden" name="action" value="apply_job">
-                                            <input type="hidden" name="job_id" value="<?php echo (int)$job['id']; ?>">
-                                            <button type="submit" class="job-apply-btn">Apply Now</button>
-                                        </form>
+                                        <a href="job_details.php?id=<?php echo (int)$job['id']; ?>" class="job-apply-btn">View &amp; Apply</a>
                                     <?php endif; ?>
                                 <?php elseif ($role === 'recruiter' && (int)$job['recruiter_id'] === (int)$_SESSION['user_id']): ?>
                                     <a href="profile.php" class="job-apply-btn job-manage-btn">Manage on Profile</a>
