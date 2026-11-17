@@ -10,7 +10,18 @@ function recalculateEmployerTrustScore(PDO $pdo, int $recruiterId): array {
     );
     $stmtApps->execute([$recruiterId]);
     $applications = $stmtApps->fetchAll(PDO::FETCH_ASSOC);
-    $totalApps = count($applications);
+
+    // A brand-new application still waiting for its first reply must not lower the score.
+    // Only applications that were answered, or that are older than the grace period, are evaluated.
+    $graceDays = 5;
+    $eligibleIds = [];
+    foreach ($applications as $app) {
+        $ageDays = (time() - strtotime($app['applied_at'])) / 86400;
+        if ($app['current_status'] !== 'Applied' || $ageDays > $graceDays) {
+            $eligibleIds[(int)$app['id']] = true;
+        }
+    }
+    $totalApps = count($eligibleIds);
 
     if ($totalApps === 0) {
         $result = [
@@ -47,7 +58,7 @@ function recalculateEmployerTrustScore(PDO $pdo, int $recruiterId): array {
     // M2: Application Acknowledgement Rate (% updated beyond 'Applied')
     $acknowledgedCount = 0;
     foreach ($applications as $app) {
-        if ($app['current_status'] !== 'Applied') {
+        if (isset($eligibleIds[(int)$app['id']]) && $app['current_status'] !== 'Applied') {
             $acknowledgedCount++;
         }
     }
@@ -91,18 +102,29 @@ function recalculateEmployerTrustScore(PDO $pdo, int $recruiterId): array {
     $m4Rows = $stmtM4->fetchAll(PDO::FETCH_ASSOC);
     $updatedCount = 0;
     foreach ($m4Rows as $row) {
-        if ($row['transition_count'] >= 2) $updatedCount++;
+        if (isset($eligibleIds[(int)$row['id']]) && $row['transition_count'] >= 2) $updatedCount++;
     }
     $m4 = round(($updatedCount / $totalApps) * 100, 2);
 
+    // M5: Candidate rating (only used once at least one job seeker has rated this employer)
+    $stmtRev = $pdo->prepare("SELECT AVG(rating) AS avg_rating, COUNT(*) AS cnt FROM employer_reviews WHERE recruiter_id = ?");
+    $stmtRev->execute([$recruiterId]);
+    $rev = $stmtRev->fetch(PDO::FETCH_ASSOC);
+    $reviewCount = (int)($rev['cnt'] ?? 0);
+    $m5 = $reviewCount > 0 ? round(((float)$rev['avg_rating'] / 5) * 100, 2) : null;
+
     // Weighted Overall Trust Score Equation
-    $overall = round(($m1 * 0.35) + ($m2 * 0.25) + ($m3 * 0.20) + ($m4 * 0.20), 2);
+    if ($m5 !== null) {
+        $overall = round(($m1 * 0.30) + ($m2 * 0.20) + ($m3 * 0.15) + ($m4 * 0.15) + ($m5 * 0.20), 2);
+    } else {
+        $overall = round(($m1 * 0.35) + ($m2 * 0.25) + ($m3 * 0.20) + ($m4 * 0.20), 2);
+    }
 
     // Determine Display Badge Threshold
     $badge = ($totalApps >= 5) ? 'Active' : 'Insufficient Data';
 
     $result = [
-        'm1' => $m1, 'm2' => $m2, 'm3' => $m3, 'm4' => $m4,
+        'm1' => $m1, 'm2' => $m2, 'm3' => $m3, 'm4' => $m4, 'm5' => $m5,
         'overall' => $overall, 'badge' => $badge
     ];
 
