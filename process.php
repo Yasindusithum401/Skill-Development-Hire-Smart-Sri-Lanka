@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once 'config.php';
-require_once 'trust_calculator.php'; // Included for ETSR metric updates
+require_once 'trust_calculator.php'; 
 
 $action = $_POST['action'] ?? '';
 
@@ -63,7 +63,13 @@ if ($action === 'register_seeker') {
     );
     $stmt->execute([$username, $email, $contact_email, $hashed, $dob, $mobile]);
 
-    redirect_with_message('index.php', 'success', 'Account created! You can log in now.');
+    
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = (int)$pdo->lastInsertId();
+    $_SESSION['role']    = 'seeker';
+    $_SESSION['name']    = $username;
+
+    redirect_with_message('index.php', 'success', 'Account created! Welcome, ' . $username . '.');
 
 } elseif ($action === 'register_recruiter') {
 
@@ -96,7 +102,13 @@ if ($action === 'register_seeker') {
     );
     $stmt->execute([$company_name, $company_type, $company_email, $hashed, $company_description]);
 
-    redirect_with_message('index.php', 'success', 'Company account created! You can log in now.');
+    
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = (int)$pdo->lastInsertId();
+    $_SESSION['role']    = 'recruiter';
+    $_SESSION['name']    = $company_name;
+
+    redirect_with_message('index.php', 'success', 'Company account created! Welcome, ' . $company_name . '.');
 
 } elseif ($action === 'login') {
 
@@ -108,7 +120,7 @@ if ($action === 'register_seeker') {
         respond_login($ajax, 'error', 'Please enter your email and password.');
     }
 
-    // Try job seekers first
+    
     $stmt = $pdo->prepare("SELECT id, username, password, profile_image FROM job_seekers WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
@@ -124,7 +136,7 @@ if ($action === 'register_seeker') {
         ]);
     }
 
-    // Then try recruiters
+    
     $stmt = $pdo->prepare("SELECT id, company_name, password, profile_image FROM recruiters WHERE company_email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
@@ -361,12 +373,27 @@ if ($action === 'register_seeker') {
         redirect_with_message('my_applications.php', 'error', 'Please provide a valid rating (1-5 stars).');
     }
 
+    // A job seeker can rate an employer only after the employer has made a final decision
+    // (Selected or Rejected) on one of that seeker's applications.
+    $stmtApplied = $pdo->prepare(
+        "SELECT 1 FROM applications a JOIN jobs j ON j.id = a.job_id
+         WHERE a.seeker_id = ? AND j.recruiter_id = ?
+           AND a.current_status IN ('Selected', 'Rejected') LIMIT 1"
+    );
+    $stmtApplied->execute([$_SESSION['user_id'], $recruiterId]);
+    if (!$stmtApplied->fetchColumn()) {
+        redirect_with_message('my_applications.php', 'error', 'You can rate an employer only after they have selected or rejected your application.');
+    }
+
     $stmtRev = $pdo->prepare(
         "INSERT INTO employer_reviews (recruiter_id, seeker_id, rating, comment) 
          VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment)"
     );
     $stmtRev->execute([$recruiterId, $_SESSION['user_id'], $rating, $comment]);
+
+    // The rating now feeds into the employer's trust score
+    recalculateEmployerTrustScore($pdo, $recruiterId);
 
     redirect_with_message('my_applications.php', 'success', 'Review submitted successfully.');
 
