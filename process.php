@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once 'config.php';
-require_once 'trust_calculator.php'; 
+require_once 'trust_calculator.php'; // Included for ETSR metric updates
 
 $action = $_POST['action'] ?? '';
 
@@ -29,6 +29,15 @@ function require_logged_in_json_safe(): void
     if (!isset($_SESSION['user_id'])) {
         redirect_with_message('index.php', 'error', 'Please log in first.');
     }
+}
+
+// Job poster uploads: images only, max 10MB
+if (!defined('MAX_POSTER_BYTES')) { define('MAX_POSTER_BYTES', 10 * 1024 * 1024); }
+if (!defined('UPLOAD_DIR_POSTER')) { define('UPLOAD_DIR_POSTER', __DIR__ . '/uploads/job_posters/'); }
+
+// If the whole request is bigger than the server's post_max_size, PHP drops $_POST and $_FILES completely.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    redirect_with_message('profile.php', 'error', 'The uploaded file is too large for the server. Please use an image under 10MB.');
 }
 
 if ($action === 'register_seeker') {
@@ -63,7 +72,7 @@ if ($action === 'register_seeker') {
     );
     $stmt->execute([$username, $email, $contact_email, $hashed, $dob, $mobile]);
 
-    
+    // Auto-login: sign the new seeker straight in instead of sending them back to the login form.
     session_regenerate_id(true);
     $_SESSION['user_id'] = (int)$pdo->lastInsertId();
     $_SESSION['role']    = 'seeker';
@@ -102,7 +111,7 @@ if ($action === 'register_seeker') {
     );
     $stmt->execute([$company_name, $company_type, $company_email, $hashed, $company_description]);
 
-    
+    // Auto-login: sign the new recruiter straight in instead of sending them back to the login form.
     session_regenerate_id(true);
     $_SESSION['user_id'] = (int)$pdo->lastInsertId();
     $_SESSION['role']    = 'recruiter';
@@ -120,7 +129,7 @@ if ($action === 'register_seeker') {
         respond_login($ajax, 'error', 'Please enter your email and password.');
     }
 
-    
+    // Try job seekers first
     $stmt = $pdo->prepare("SELECT id, username, password, profile_image FROM job_seekers WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
@@ -136,7 +145,7 @@ if ($action === 'register_seeker') {
         ]);
     }
 
-    
+    // Then try recruiters
     $stmt = $pdo->prepare("SELECT id, company_name, password, profile_image FROM recruiters WHERE company_email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
@@ -245,6 +254,7 @@ if ($action === 'register_seeker') {
     $salaryMax    = $_POST['salary_max'] ?? '';
     $description  = trim($_POST['description'] ?? '');
     $requirements = trim($_POST['requirements'] ?? '');
+    $contactDetails = trim($_POST['contact_details'] ?? '');
 
     if ($title === '' || $category === '' || $jobType === '' || $experience === '' || $location === '' || $description === '') {
         redirect_with_message('profile.php', 'error', 'Please fill in all required job fields.');
@@ -253,14 +263,31 @@ if ($action === 'register_seeker') {
         redirect_with_message('profile.php', 'error', 'Invalid category, type, or experience level.');
     }
 
+    if (mb_strlen($contactDetails) > 500) {
+        redirect_with_message('profile.php', 'error', 'Company contact details are too long (maximum 500 characters).');
+    }
+
     $salaryMin = ($salaryMin !== '' && is_numeric($salaryMin)) ? (int)$salaryMin : null;
     $salaryMax = ($salaryMax !== '' && is_numeric($salaryMax)) ? (int)$salaryMax : null;
 
+    // Optional job poster image (max 10MB)
+    $posterPath = null;
+    if (isset($_FILES['job_poster']) && $_FILES['job_poster']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if (in_array($_FILES['job_poster']['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            redirect_with_message('profile.php', 'error', 'Job poster is too large. Maximum size is 10MB.');
+        }
+        try {
+            $posterPath = handle_upload('job_poster', UPLOAD_DIR_POSTER, ['jpg', 'jpeg', 'png', 'webp'], MAX_POSTER_BYTES, 'poster');
+        } catch (RuntimeException $e) {
+            redirect_with_message('profile.php', 'error', 'Job poster: ' . $e->getMessage() . ' (max 10MB)');
+        }
+    }
+
     $stmt = $pdo->prepare(
-        "INSERT INTO jobs (recruiter_id, title, category, job_type, location, experience_level, salary_min, salary_max, description, requirements)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO jobs (recruiter_id, title, category, job_type, location, experience_level, salary_min, salary_max, description, requirements, poster_image, contact_details)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
-    $stmt->execute([$_SESSION['user_id'], $title, $category, $jobType, $location, $experience, $salaryMin, $salaryMax, $description, $requirements ?: null]);
+    $stmt->execute([$_SESSION['user_id'], $title, $category, $jobType, $location, $experience, $salaryMin, $salaryMax, $description, $requirements ?: null, $posterPath, $contactDetails ?: null]);
 
     redirect_with_message('profile.php', 'success', 'Job posted successfully.');
 

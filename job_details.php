@@ -95,6 +95,11 @@ if ($ratingPct !== null) {
                 <h3 class="mt-4">Requirements</h3>
                 <p><?php echo nl2br(htmlspecialchars($job['requirements'])); ?></p>
 
+                <?php if (!empty($job['contact_details'])): ?>
+                    <h3 class="mt-4">Company Contact Details</h3>
+                    <p><?php echo nl2br(htmlspecialchars($job['contact_details'])); ?></p>
+                <?php endif; ?>
+
                 <?php if (!empty($job['company_description'])): ?>
                     <h3 class="mt-4">About the Company</h3>
                     <p><?php echo nl2br(htmlspecialchars($job['company_description'])); ?></p>

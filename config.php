@@ -1,9 +1,9 @@
 <?php
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'hiresmart_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'sql208.infinityfree.com');
+define('DB_NAME', 'if0_43438252_hiresmart');
+define('DB_USER', 'if0_43438252');
+define('DB_PASS', 'lNQSi0SvcLx');
 
 try {
     $pdo = new PDO(
@@ -18,8 +18,6 @@ try {
         . "database.sql has been imported. (" . $e->getMessage() . ")");
 }
 
-// Shared lists used by both the "post a job" form and the jobs search filters,
-// kept in one place so they can never go out of sync.
 define('JOB_CATEGORIES', [
     'IT / Software', 'Finance / Banking', 'Marketing', 'Sales', 'Engineering',
     'Healthcare', 'Education', 'Manufacturing', 'Customer Service', 'Other',

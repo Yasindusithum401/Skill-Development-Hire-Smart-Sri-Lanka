@@ -44,9 +44,16 @@ $myApps = $stmt->fetchAll();
     <title>My Applications - Hire Smart Sri Lanka</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="home.css">
 </head>
 <body>
     <?php include 'navbar.php'; ?>
+    <div class="shape shape1"></div>
+    <div class="shape shape2"></div>
+    <div class="shape shape3"></div>
+    <div class="shape shape4"></div>
+    <div class="shape shape5"></div>
+    <div class="shape shape6"></div>
 
     <div class="container py-4">
         <h1 class="fw-bold mb-4">Application Progress & Reviews</h1>
@@ -85,6 +92,8 @@ $myApps = $stmt->fetchAll();
                             <td>
                                 <?php if ($app['my_rating']): ?>
                                     <span class="text-warning fw-bold">★ <?php echo $app['my_rating']; ?>/5</span>
+                                <?php elseif (!in_array($app['current_status'], ['Selected', 'Rejected'], true)): ?>
+                                    <span class="small text-muted">Available after the employer decides</span>
                                 <?php else: ?>
                                     <button class="btn btn-sm btn-outline-warning" onclick="openReviewModal(<?php echo $app['recruiter_id']; ?>, '<?php echo htmlspecialchars(addslashes($app['company_name'])); ?>')">
                                         Rate Employer

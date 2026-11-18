@@ -49,14 +49,20 @@ $stages = ['Applied', 'In Review', 'HR Screening', 'Interview', 'Selected', 'Rej
     <title>Employer Dashboard - Hire Smart Sri Lanka</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="home.css">
     <style>
         .dash-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
-        .badge-trust { background: #0284c7; color: white; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+        .badge-trust { background: #ff7a00; color: white; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
     <?php include 'navbar.php'; ?>
-
+    <div class="shape shape1"></div>
+    <div class="shape shape2"></div>
+    <div class="shape shape3"></div>
+    <div class="shape shape4"></div>
+    <div class="shape shape5"></div>
+    <div class="shape shape6"></div>
     <div class="container py-4">
         <h1 class="fw-bold mb-3">Employer Dashboard</h1>
 
@@ -70,7 +76,7 @@ $stages = ['Applied', 'In Review', 'HR Screening', 'Interview', 'Selected', 'Rej
                 <div class="col-6 col-md-3">
                     <div class="p-2 border rounded bg-light">
                         <small class="text-muted d-block">Overall Trust Score</small>
-                        <span class="fs-4 fw-bold text-primary"><?php echo $trustScore['overall']; ?>%</span>
+                        <span class="fs-5 fw-bold"><?php echo $trustScore['overall']; ?>%</span>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">

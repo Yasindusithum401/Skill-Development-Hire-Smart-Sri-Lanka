@@ -211,7 +211,7 @@ $statusType = $_GET['status'] ?? '';
             <!--  RECRUITER: POST A JOB  -->
             <div class="profile-section">
                 <h2>Post a New Job</h2>
-                <form action="process.php" method="POST" class="profile-form">
+                <form action="process.php" method="POST" enctype="multipart/form-data" class="profile-form">
                     <input type="hidden" name="action" value="post_job">
                     <div class="row">
                         <div class="col-md-6 mb-3 auth-field">
@@ -267,6 +267,16 @@ $statusType = $_GET['status'] ?? '';
                     <div class="mb-3 auth-field">
                         <label class="form-label">Requirements (optional)</label>
                         <textarea name="requirements" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3 auth-field">
+                        <label class="form-label">Company Contact Details (optional)</label>
+                        <textarea name="contact_details" class="form-control" rows="2" maxlength="500" placeholder="e.g. Phone: 011 234 5678 | Email: hr@company.lk | Address"></textarea>
+                        <small class="text-muted">Shown to job seekers on the job. Maximum 500 characters.</small>
+                    </div>
+                    <div class="mb-3 auth-field">
+                        <label class="form-label">Job Poster Image (optional)</label>
+                        <input type="file" name="job_poster" id="job_poster" class="form-control" accept="image/png,image/jpeg,image/webp">
+                        <small class="text-muted">JPG, PNG or WEBP. Maximum size 10MB.</small>
                     </div>
                     <button type="submit" class="btn fw-bold auth-btn-primary" style="padding:10px 28px;background:#ff7a00;color:white;">Publish Job</button>
                 </form>
@@ -341,5 +351,19 @@ $statusType = $_GET['status'] ?? '';
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Job poster: block files larger than 10MB before uploading
+        (function () {
+            var input = document.getElementById('job_poster');
+            if (!input) return;
+            input.addEventListener('change', function () {
+                var f = input.files[0];
+                if (f && f.size > 10 * 1024 * 1024) {
+                    alert('The job poster is too large. Maximum size is 10MB.');
+                    input.value = '';
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

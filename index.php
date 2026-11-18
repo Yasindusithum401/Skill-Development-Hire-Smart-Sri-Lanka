@@ -5,6 +5,8 @@ require_once 'config.php';
 $loggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['role'] ?? null;
 $userName = $_SESSION['name'] ?? '';
+$statusMsg = $_GET['message'] ?? '';
+$statusType = $_GET['status'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,6 +21,15 @@ $userName = $_SESSION['name'] ?? '';
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
         }
+        .job-flash {
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 14.5px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .job-flash-success { background:#e9f8ee; color:#1e7a3d; border:1px solid #bfe9cc; }
+        .job-flash-error { background:#fdeceb; color:#c23a2e; border:1px solid #f6c9c4; }
     </style>
 </head>
 <body>
@@ -30,6 +41,12 @@ $userName = $_SESSION['name'] ?? '';
     <div class="shape shape6"></div>
 
     <?php include 'navbar.php'; ?>
+
+    <?php if ($statusMsg): ?>
+        <div class="job-flash <?php echo $statusType === 'success' ? 'job-flash-success' : 'job-flash-error'; ?>" style="max-width:700px;margin:20px auto 0;">
+            <?php echo htmlspecialchars($statusMsg); ?>
+        </div>
+    <?php endif; ?>
 
     <section class="text-center py-5">
         <h1>Find Your Dream Job<br><span class="orange">Build Your Future</span></h1>
